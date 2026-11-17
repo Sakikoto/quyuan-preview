@@ -1,0 +1,43 @@
+name: Publish Qu Yuan preview
+on:
+  push:
+    branches: [main]
+    paths: [release.json, '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Verify and unpack website
+        shell: python
+        run: |
+          import hashlib, io, json, pathlib, zipfile
+          manifest = json.loads(pathlib.Path('release.json').read_text())
+          data = b''.join(pathlib.Path(part).read_bytes() for part in manifest['parts'])
+          assert hashlib.sha256(data).hexdigest() == manifest['sha256'], 'Release checksum mismatch'
+          target = pathlib.Path('_site').resolve()
+          with zipfile.ZipFile(io.BytesIO(data)) as archive:
+              assert archive.testzip() is None
+              for item in archive.infolist():
+                  assert (target / item.filename).resolve().is_relative_to(target)
+              archive.extractall(target)
+          assert (target / 'index.html').is_file()
+          print('Verified release:', manifest['release'])
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
