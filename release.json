@@ -1,0 +1,10 @@
+{
+  "release": "R07",
+  "sha256": "893b3a4f3e0536ea5e35a5b2e64e3366bea0bd287bfe39432cde3a2f531d7c96",
+  "parts": [
+    "site-release.zip.001",
+    "site-release.zip.002",
+    "site-release.zip.003",
+    "site-release.zip.004"
+  ]
+}
